@@ -52,6 +52,17 @@ const UserSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+
+    image: {
+      type: String,
+      default: '',
+    },
+
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
   },
   {
     timestamps: true, // adds createdAt + updatedAt

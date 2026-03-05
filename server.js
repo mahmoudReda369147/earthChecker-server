@@ -16,6 +16,8 @@ const moduleRoutes = require('./routes/modules')
 const uploadRoutes = require('./routes/upload')
 const agentRoutes  = require('./routes/agents')
 const formRoutes   = require('./routes/forms')
+const staffRoutes  = require('./routes/staff')
+const cycleRoutes  = require('./routes/cycles')
 
 /* ── Connect to MongoDB ── */
 connectDB()
@@ -102,6 +104,8 @@ app.use('/api/modules', moduleRoutes)
 app.use('/api/upload',  uploadRoutes)
 app.use('/api/agents',  agentRoutes)
 app.use('/api/forms',   formRoutes)
+app.use('/api/staff',   staffRoutes)
+app.use('/api/cycles',  cycleRoutes)
 
 /* ── Health check ── */
 app.get('/api/health', (req, res) => {
