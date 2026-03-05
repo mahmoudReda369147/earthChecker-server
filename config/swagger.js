@@ -26,6 +26,7 @@ Authentication system with access/refresh token rotation, Gmail password reset, 
       { name: 'Auth',    description: 'Authentication & session management' },
       { name: 'Modules', description: 'Module management — CEO only' },
       { name: 'Agents',  description: 'AI Agent management — CEO only (like/dislike open to all)' },
+      { name: 'Forms',   description: 'Form management — CEO only' },
       { name: 'Upload',  description: 'Cloudinary image upload' },
     ],
     components: {
@@ -193,6 +194,121 @@ Authentication system with access/refresh token rotation, Gmail password reset, 
                     limit:      { type: 'integer' },
                     hasNext:    { type: 'boolean' },
                     hasPrev:    { type: 'boolean' },
+                  },
+                },
+              },
+            },
+          },
+        },
+
+        /* ── Forms ── */
+        SectionSetting: {
+          type: 'object',
+          properties: {
+            max:    { type: 'number', nullable: true, example: 100  },
+            min:    { type: 'number', nullable: true, example: 0    },
+            length: { type: 'number', nullable: true, example: 255  },
+            size:   { type: 'number', nullable: true, example: 5242880 },
+          },
+        },
+        SectionInput: {
+          type: 'object',
+          properties: {
+            type:         { type: 'string', example: 'text' },
+            title:        { type: 'string', example: 'Sample Quality' },
+            descriptions: { type: 'string', example: 'Describe the defect if any' },
+            options:      { type: 'array', items: { type: 'string' }, example: ['Pass', 'Fail', 'N/A'] },
+            assignedBotId: { type: 'string', nullable: true, example: '60d0fe4f5311236168a109cd' },
+            isRequired:   { type: 'boolean', example: true },
+            setting:      { $ref: '#/components/schemas/SectionSetting' },
+          },
+        },
+        Section: {
+          type: 'object',
+          properties: {
+            _id:          { type: 'string', example: '60d0fe4f5311236168a109ce' },
+            type:         { type: 'string', example: 'text' },
+            title:        { type: 'string', example: 'Sample Quality' },
+            descriptions: { type: 'string', example: 'Describe the defect if any' },
+            options:      { type: 'array', items: { type: 'string' }, example: ['Pass', 'Fail', 'N/A'] },
+            assignedBotId: {
+              type: 'object',
+              nullable: true,
+              properties: {
+                _id:  { type: 'string' },
+                name: { type: 'string', example: 'VisionCore-v2' },
+              },
+            },
+            isRequired: { type: 'boolean', example: true },
+            setting:    { $ref: '#/components/schemas/SectionSetting' },
+          },
+        },
+        Form: {
+          type: 'object',
+          properties: {
+            _id:         { type: 'string',  example: '60d0fe4f5311236168a109ca' },
+            name:        { type: 'string',  example: 'Raw Material Inspection Form' },
+            description: { type: 'string',  example: 'Form used during incoming raw material inspection' },
+            createdBy: {
+              type: 'object',
+              properties: {
+                _id:   { type: 'string', example: '60d0fe4f5311236168a109cc' },
+                name:  { type: 'string', example: 'Ahmad K.' },
+                email: { type: 'string', example: 'admin@apex-textile.com' },
+              },
+            },
+            moduleId: {
+              type: 'object',
+              properties: {
+                _id:   { type: 'string', example: '60d0fe4f5311236168a109cb' },
+                title: { type: 'string', example: 'Raw Material Inspection' },
+              },
+            },
+            companyId: { type: 'string', example: '60d0fe4f5311236168a109cf' },
+            sections:  { type: 'array', items: { $ref: '#/components/schemas/Section' } },
+            order:     { type: 'integer', example: 0, description: 'Display order within the module (ascending)' },
+            isDeleted: { type: 'boolean', example: false },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        ReorderFormsInput: {
+          type: 'object',
+          required: ['moduleId', 'orderedIds'],
+          properties: {
+            moduleId:   { type: 'string', example: '60d0fe4f5311236168a109ca', description: 'Module ObjectId' },
+            orderedIds: {
+              type: 'array',
+              items: { type: 'string' },
+              example: ['60d0fe4f5311236168a109cb', '60d0fe4f5311236168a109cc'],
+              description: 'Form IDs in the desired display order (index = new order value)',
+            },
+          },
+        },
+        FormResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            data:    { type: 'object', properties: { form: { $ref: '#/components/schemas/Form' } } },
+          },
+        },
+        FormListResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            data: {
+              type: 'object',
+              properties: {
+                forms: { type: 'array', items: { $ref: '#/components/schemas/Form' } },
+                pagination: {
+                  type: 'object',
+                  properties: {
+                    total:      { type: 'integer', example: 12 },
+                    totalPages: { type: 'integer', example: 2  },
+                    page:       { type: 'integer', example: 1  },
+                    limit:      { type: 'integer', example: 10 },
+                    hasNext:    { type: 'boolean', example: true  },
+                    hasPrev:    { type: 'boolean', example: false },
                   },
                 },
               },
