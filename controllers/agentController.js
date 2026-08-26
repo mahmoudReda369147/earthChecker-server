@@ -1,4 +1,5 @@
 const Agent          = require('../models/Agent')
+const Analysis       = require('../models/Analysis')
 const { uploadBuffer } = require('../utils/cloudinary')
 
 /* Helper: upload a req.file buffer to cloudinary if present */
@@ -82,12 +83,46 @@ async function getAgents(req, res) {
       Agent.countDocuments(filter),
     ])
 
+    /* Aggregate analysis stats for the fetched agents */
+    const agentIds = agents.map((a) => a._id)
+    const statsRaw = agentIds.length > 0
+      ? await Analysis.aggregate([
+          { $match: { agentId: { $in: agentIds } } },
+          {
+            $group: {
+              _id:          '$agentId',
+              totalAnalyses: { $sum: 1 },
+              passCount:     { $sum: { $cond: [{ $eq: ['$aiResult.result', 'pass'] }, 1, 0] } },
+              failCount:     { $sum: { $cond: [{ $eq: ['$aiResult.result', 'fail'] }, 1, 0] } },
+              likeCount:     { $sum: { $cond: [{ $eq: ['$userRating', 'like'] },    1, 0] } },
+              dislikeCount:  { $sum: { $cond: [{ $eq: ['$userRating', 'dislike'] }, 1, 0] } },
+            },
+          },
+        ])
+      : []
+
+    const statsMap = {}
+    statsRaw.forEach((s) => { statsMap[s._id.toString()] = s })
+
+    const agentsWithStats = agents.map((a) => {
+      const obj   = a.toObject()
+      const stats = statsMap[a._id.toString()] || {}
+      obj.analysisStats = {
+        total:    stats.totalAnalyses || 0,
+        pass:     stats.passCount     || 0,
+        fail:     stats.failCount     || 0,
+        likes:    stats.likeCount     || 0,
+        dislikes: stats.dislikeCount  || 0,
+      }
+      return obj
+    })
+
     const totalPages = Math.ceil(total / limitNum)
 
     return res.status(200).json({
       success: true,
       data: {
-        agents,
+        agents: agentsWithStats,
         pagination: { total, totalPages, page: pageNum, limit: limitNum, hasNext: pageNum < totalPages, hasPrev: pageNum > 1 },
       },
     })

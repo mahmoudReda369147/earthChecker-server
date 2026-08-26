@@ -26,6 +26,12 @@ const CycleSchema = new mongoose.Schema(
       required: [true, 'Assigned supervisor is required'],
     },
 
+    assignedWorker: {
+      type:    mongoose.Schema.Types.ObjectId,
+      ref:     'User',
+      default: null,
+    },
+
     status: {
       type:    String,
       enum:    ['new', 'inProgress', 'paused', 'cancelledRequest', 'cancelled', 'completed'],
@@ -70,6 +76,7 @@ const CycleSchema = new mongoose.Schema(
 
 CycleSchema.index({ companyId: 1 })
 CycleSchema.index({ assignedSupervisor: 1 })
+CycleSchema.index({ assignedWorker: 1 })
 CycleSchema.index({ status: 1 })
 
 /* Auto-generate cycleId before first save */

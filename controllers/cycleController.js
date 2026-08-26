@@ -1,8 +1,11 @@
 const Cycle = require('../models/Cycle')
+const Stage = require('../models/Stage')
+const Form  = require('../models/Form')
 
 const POPULATE = [
-  { path: 'moduleId',           select: 'title'      },
+  { path: 'moduleId',           select: 'name title' },
   { path: 'assignedSupervisor', select: 'name email image' },
+  { path: 'assignedWorker',     select: 'name email image' },
   { path: 'createdBy',          select: 'name'       },
 ]
 
@@ -28,10 +31,9 @@ async function getCycles(req, res) {
 
     const filter = { companyId: req.user.company, isDeleted: false }
 
-    /* Supervisor can only see their own cycles */
-    if (req.user.role === 'supervisor') {
-      filter.assignedSupervisor = req.user._id
-    }
+    /* Scope by role */
+    if (req.user.role === 'supervisor') filter.assignedSupervisor = req.user._id
+    if (req.user.role === 'worker')     filter.assignedWorker     = req.user._id
 
     if (search.trim()) {
       filter.$or = [
@@ -87,7 +89,7 @@ async function getCycles(req, res) {
    ════════════════════════════════════════════════════════════ */
 async function createCycle(req, res) {
   try {
-    const { name, moduleId, assignedSupervisor, progress } = req.body
+    const { name, moduleId, assignedSupervisor, assignedWorker } = req.body
 
     if (!name || !moduleId) {
       return res.status(400).json({ success: false, message: 'name and moduleId are required' })
@@ -107,12 +109,30 @@ async function createCycle(req, res) {
       name,
       moduleId,
       assignedSupervisor: supervisorId,
-      progress:           progress ?? 0,
+      assignedWorker:     assignedWorker || null,
       companyId:          req.user.company,
       createdBy:          req.user._id,
     })
 
     await cycle.populate(POPULATE)
+
+    /* ── Auto-create stages from module forms ── */
+    const forms = await Form.find({ moduleId, isDeleted: false })
+      .select('_id order')
+      .sort({ order: 1 })
+      .lean()
+
+    if (forms.length > 0) {
+      const stages = forms.map((f, i) => ({
+        cycleId:   cycle._id,
+        formId:    f._id,
+        moduleId,
+        order:     f.order ?? i,
+        status:    i === 0 ? 'available' : 'locked',
+        companyId: req.user.company,
+      }))
+      await Stage.insertMany(stages)
+    }
 
     return res.status(201).json({ success: true, data: { cycle } })
   } catch (err) {
@@ -129,6 +149,7 @@ async function getCycle(req, res) {
   try {
     const filter = { _id: req.params.id, companyId: req.user.company, isDeleted: false }
     if (req.user.role === 'supervisor') filter.assignedSupervisor = req.user._id
+    if (req.user.role === 'worker')     filter.assignedWorker     = req.user._id
 
     const cycle = await Cycle.findOne(filter).populate(POPULATE)
     if (!cycle) return res.status(404).json({ success: false, message: 'Cycle not found' })
@@ -151,15 +172,19 @@ async function updateCycle(req, res) {
     const filter = { _id: req.params.id, companyId: req.user.company, isDeleted: false }
     if (req.user.role === 'supervisor') filter.assignedSupervisor = req.user._id
 
-    const { name, moduleId, progress, assignedSupervisor } = req.body
+    const { name, moduleId, assignedSupervisor, assignedWorker } = req.body
     const updates = {}
     if (name     !== undefined) updates.name     = name
     if (moduleId !== undefined) updates.moduleId = moduleId
-    if (progress !== undefined) updates.progress = progress
 
     /* Only CEO can reassign supervisor */
     if (assignedSupervisor !== undefined && req.user.role === 'ceo') {
       updates.assignedSupervisor = assignedSupervisor
+    }
+
+    /* CEO or supervisor can assign/reassign worker */
+    if (assignedWorker !== undefined) {
+      updates.assignedWorker = assignedWorker || null
     }
 
     const cycle = await Cycle.findOneAndUpdate(filter, updates, { new: true, runValidators: true })
