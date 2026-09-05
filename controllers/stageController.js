@@ -83,9 +83,12 @@ async function getFormByStage(req, res) {
           cycleId: stage.cycleId,
         },
         cycle: {
-          _id:    cycle._id,
-          name:   cycle.name,
-          status: cycle.status,
+          _id:            cycle._id,
+          name:           cycle.name,
+          status:         cycle.status,
+          sampleSize:     cycle.sampleSize,
+          totalBatchSize: cycle.totalBatchSize,
+          unitCost:       cycle.unitCost,
         },
       },
     })

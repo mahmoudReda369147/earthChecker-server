@@ -15,7 +15,7 @@ async function resolveImage(file, folder, fallback = '') {
    ════════════════════════════════════════════════════════════ */
 async function createAgent(req, res) {
   try {
-    const { name, description, userPrompt, tolerance } = req.body
+    const { name, description, userPrompt, tolerance, complianceThreshold, criticalInspection } = req.body
 
     // Images: use uploaded file if present, otherwise URL from body
     const image         = await resolveImage(req.files?.image?.[0],         'agents',         req.body.image         || '')
@@ -28,6 +28,8 @@ async function createAgent(req, res) {
       description,
       userPrompt,
       tolerance: tolerance ? Number(tolerance) : 0,
+      complianceThreshold: complianceThreshold !== undefined ? Number(complianceThreshold) : 80,
+      criticalInspection: criticalInspection !== undefined ? (criticalInspection === true || criticalInspection === 'true') : true,
       image,
       passImage,
       failImage,
@@ -156,7 +158,7 @@ async function getAgent(req, res) {
    ════════════════════════════════════════════════════════════ */
 async function updateAgent(req, res) {
   try {
-    const { name, description, userPrompt, tolerance } = req.body
+    const { name, description, userPrompt, tolerance, complianceThreshold, criticalInspection } = req.body
 
     // Resolve any newly uploaded images
     const image         = req.files?.image?.[0]         ? (await resolveImage(req.files.image[0],         'agents'))         : req.body.image
@@ -166,14 +168,16 @@ async function updateAgent(req, res) {
 
     // Build update — only include defined fields
     const update = {}
-    if (name         !== undefined) update.name         = name
-    if (description  !== undefined) update.description  = description
-    if (userPrompt   !== undefined) update.userPrompt   = userPrompt
-    if (tolerance    !== undefined) update.tolerance    = Number(tolerance)
-    if (image        !== undefined) update.image        = image
-    if (passImage    !== undefined) update.passImage    = passImage
-    if (failImage    !== undefined) update.failImage    = failImage
-    if (thinkingImage !== undefined) update.thinkingImage = thinkingImage
+    if (name                !== undefined) update.name                = name
+    if (description         !== undefined) update.description         = description
+    if (userPrompt          !== undefined) update.userPrompt          = userPrompt
+    if (tolerance           !== undefined) update.tolerance           = Number(tolerance)
+    if (complianceThreshold !== undefined) update.complianceThreshold = Number(complianceThreshold)
+    if (criticalInspection  !== undefined) update.criticalInspection  = criticalInspection === true || criticalInspection === 'true'
+    if (image               !== undefined) update.image               = image
+    if (passImage           !== undefined) update.passImage           = passImage
+    if (failImage           !== undefined) update.failImage           = failImage
+    if (thinkingImage       !== undefined) update.thinkingImage       = thinkingImage
 
     const agent = await Agent.findOneAndUpdate(
       { _id: req.params.id, companyId: req.user.company, isDeleted: false },

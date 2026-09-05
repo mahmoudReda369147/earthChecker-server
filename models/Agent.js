@@ -28,6 +28,18 @@ const AgentSchema = new mongoose.Schema(
       max:     [100, 'Tolerance cannot exceed 100'],
     },
 
+    complianceThreshold: {
+      type:    Number,
+      default: 80,
+      min:     [0,   'Compliance threshold cannot be negative'],
+      max:     [100, 'Compliance threshold cannot exceed 100'],
+    },
+
+    criticalInspection: {
+      type:    Boolean,
+      default: true,
+    },
+
     /* ── Image assets ── */
     image:         { type: String, default: '' },   // main avatar / icon
     passImage:     { type: String, default: '' },   // shown on pass result

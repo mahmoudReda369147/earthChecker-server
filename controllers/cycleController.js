@@ -19,8 +19,11 @@ async function getCycles(req, res) {
       limit      = 10,
       search     = '',
       status     = '',
+      complianceStatus = '',
       moduleId   = '',
       supervisor = '',
+      fromDate   = '',
+      toDate     = '',
       sortBy     = 'createdAt',
       sortOrder  = 'desc',
     } = req.query
@@ -30,6 +33,25 @@ async function getCycles(req, res) {
     const skip     = (pageNum - 1) * limitNum
 
     const filter = { companyId: req.user.company, isDeleted: false }
+
+    /* ── Date Range Filter ── */
+    if (fromDate || toDate) {
+      filter.createdAt = {}
+      if (fromDate) {
+        const from = new Date(fromDate)
+        if (!isNaN(from.getTime())) {
+          from.setHours(0, 0, 0, 0)
+          filter.createdAt.$gte = from
+        }
+      }
+      if (toDate) {
+        const to = new Date(toDate)
+        if (!isNaN(to.getTime())) {
+          to.setHours(23, 59, 59, 999)
+          filter.createdAt.$lte = to
+        }
+      }
+    }
 
     /* Scope by role */
     if (req.user.role === 'supervisor') filter.assignedSupervisor = req.user._id
@@ -44,6 +66,10 @@ async function getCycles(req, res) {
 
     if (status.trim() && ['new','inProgress','paused','cancelledRequest','cancelled','completed'].includes(status)) {
       filter.status = status
+    }
+
+    if (complianceStatus.trim() && ['pending','accepted','rejected'].includes(complianceStatus.trim())) {
+      filter.complianceStatus = complianceStatus.trim()
     }
 
     if (moduleId.trim())   filter.moduleId          = moduleId.trim()
@@ -89,7 +115,7 @@ async function getCycles(req, res) {
    ════════════════════════════════════════════════════════════ */
 async function createCycle(req, res) {
   try {
-    const { name, moduleId, assignedSupervisor, assignedWorker } = req.body
+    const { name, moduleId, assignedSupervisor, assignedWorker, totalBatchSize, sampleSize, unitCost } = req.body
 
     if (!name || !moduleId) {
       return res.status(400).json({ success: false, message: 'name and moduleId are required' })
@@ -110,6 +136,9 @@ async function createCycle(req, res) {
       moduleId,
       assignedSupervisor: supervisorId,
       assignedWorker:     assignedWorker || null,
+      totalBatchSize:     totalBatchSize !== undefined ? Number(totalBatchSize) : 0,
+      sampleSize:         sampleSize !== undefined ? Number(sampleSize) : 0,
+      unitCost:           unitCost !== undefined ? Number(unitCost) : 0,
       companyId:          req.user.company,
       createdBy:          req.user._id,
     })
@@ -127,7 +156,7 @@ async function createCycle(req, res) {
         cycleId:   cycle._id,
         formId:    f._id,
         moduleId,
-        order:     f.order ?? i,
+        order:     i,
         status:    i === 0 ? 'available' : 'locked',
         companyId: req.user.company,
       }))
@@ -164,7 +193,7 @@ async function getCycle(req, res) {
 
 /* ════════════════════════════════════════════════════════════
    PATCH /api/cycles/:id
-   Edit: name, moduleId, progress, assignedSupervisor (CEO only).
+   Edit: name, moduleId, progress, assignedSupervisor (CEO only), totalBatchSize, sampleSize, unitCost.
    Both CEO and Supervisor can edit, but supervisor only own cycles.
    ════════════════════════════════════════════════════════════ */
 async function updateCycle(req, res) {
@@ -172,10 +201,13 @@ async function updateCycle(req, res) {
     const filter = { _id: req.params.id, companyId: req.user.company, isDeleted: false }
     if (req.user.role === 'supervisor') filter.assignedSupervisor = req.user._id
 
-    const { name, moduleId, assignedSupervisor, assignedWorker } = req.body
+    const { name, moduleId, assignedSupervisor, assignedWorker, totalBatchSize, sampleSize, unitCost } = req.body
     const updates = {}
-    if (name     !== undefined) updates.name     = name
-    if (moduleId !== undefined) updates.moduleId = moduleId
+    if (name           !== undefined) updates.name           = name
+    if (moduleId       !== undefined) updates.moduleId       = moduleId
+    if (totalBatchSize !== undefined) updates.totalBatchSize = Number(totalBatchSize) || 0
+    if (sampleSize     !== undefined) updates.sampleSize     = Number(sampleSize) || 0
+    if (unitCost       !== undefined) updates.unitCost       = Number(unitCost) || 0
 
     /* Only CEO can reassign supervisor */
     if (assignedSupervisor !== undefined && req.user.role === 'ceo') {

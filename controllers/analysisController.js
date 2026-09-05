@@ -14,7 +14,9 @@ async function getSubmissionAnalyses(req, res) {
     const submission = await Submission.findOne({
       _id: submissionId,
       companyId: req.user.company,
-    }).lean()
+    })
+      .populate('formId', 'name sections')
+      .lean()
 
     if (!submission) {
       return res.status(404).json({ success: false, message: 'Submission not found' })
@@ -34,7 +36,7 @@ async function getSubmissionAnalyses(req, res) {
     }
 
     const analyses = await Analysis.find({ submissionId })
-      .populate({ path: 'agentId', select: 'name image userPrompt tolerance' })
+      .populate({ path: 'agentId', select: 'name image userPrompt tolerance complianceThreshold criticalInspection' })
       .sort({ createdAt: 1 })
       .lean()
 
@@ -96,4 +98,31 @@ async function rateAnalysis(req, res) {
   }
 }
 
-module.exports = { getSubmissionAnalyses, rateAnalysis }
+/* ════════════════════════════════════════════════════════════
+   PATCH /api/analyses/:analysisId/problem-type
+   Update problemType for an analysis
+   Body: { problemType: string }
+   ════════════════════════════════════════════════════════════ */
+async function updateProblemType(req, res) {
+  try {
+    const { analysisId } = req.params
+    const { problemType } = req.body
+
+    const analysis = await Analysis.findOneAndUpdate(
+      { _id: analysisId, companyId: req.user.company },
+      { problemType, 'aiResult.problemType': problemType },
+      { new: true }
+    )
+
+    if (!analysis) {
+      return res.status(404).json({ success: false, message: 'Analysis not found' })
+    }
+
+    return res.status(200).json({ success: true, data: { analysis } })
+  } catch (err) {
+    console.error('[updateProblemType]', err)
+    return res.status(500).json({ success: false, message: err.message })
+  }
+}
+
+module.exports = { getSubmissionAnalyses, rateAnalysis, updateProblemType }

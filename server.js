@@ -21,6 +21,9 @@ const cycleRoutes      = require('./routes/cycles')
 const submissionRoutes = require('./routes/submissions')
 const stageRoutes      = require('./routes/stages')
 const analysisRoutes   = require('./routes/analyses')
+const overviewRoutes   = require('./routes/overview')
+const settingsRoutes   = require('./routes/settings')
+
 
 /* ── Connect to MongoDB ── */
 connectDB()
@@ -112,6 +115,9 @@ app.use('/api/cycles',      cycleRoutes)
 app.use('/api/submissions', submissionRoutes)
 app.use('/api/stages',      stageRoutes)
 app.use('/api/analyses',    analysisRoutes)
+app.use('/api/overview',    overviewRoutes)
+app.use('/api/settings',    settingsRoutes)
+
 
 /* ── Health check ── */
 app.get('/api/health', (req, res) => {

@@ -137,11 +137,25 @@ async function getModule(req, res) {
    ════════════════════════════════════════════════════════════ */
 async function updateModule(req, res) {
   try {
-    const { title, description, image } = req.body
+    const payload = req.body?.data ?? req.body
+    const { title, description, image, problemTypes } = payload
+
+    const updateData = {}
+    if (title !== undefined) updateData.title = title
+    if (description !== undefined) updateData.description = description
+    if (image !== undefined) updateData.image = image
+
+    if (problemTypes !== undefined) {
+      if (Array.isArray(problemTypes)) {
+        updateData.problemTypes = problemTypes
+      } else if (typeof problemTypes === 'string') {
+        try { updateData.problemTypes = JSON.parse(problemTypes) } catch { updateData.problemTypes = problemTypes.split(',').map(s => s.trim()).filter(Boolean) }
+      }
+    }
 
     const module = await Module.findOneAndUpdate(
       { _id: req.params.id, companyId: req.user.company },
-      { title, description, image },
+      updateData,
       { new: true, runValidators: true }
     ).populate('creatorId', 'name email')
 

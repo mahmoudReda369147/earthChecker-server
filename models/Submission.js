@@ -19,6 +19,23 @@ const SubmissionSchema = new mongoose.Schema(
     submittedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User',    required: true },
     companyId:   { type: mongoose.Schema.Types.ObjectId, ref: 'Company', required: true },
     answers:     { type: [AnswerSchema], default: [] },
+    complianceStatus: {
+      type:    String,
+      enum:    ['compliance', 'not compliance'],
+      default: 'compliance',
+    },
+    status: {
+      type:    String,
+      default: 'compliance',
+    },
+    scrap: {
+      type:    Number,
+      default: 0,
+    },
+    scrapCost: {
+      type:    Number,
+      default: 0,
+    },
   },
   { timestamps: true }
 )

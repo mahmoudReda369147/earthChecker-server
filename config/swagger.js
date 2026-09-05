@@ -206,10 +206,12 @@ Authentication system with access/refresh token rotation, Gmail password reset, 
         SectionSetting: {
           type: 'object',
           properties: {
-            max:    { type: 'number', nullable: true, example: 100  },
-            min:    { type: 'number', nullable: true, example: 0    },
-            length: { type: 'number', nullable: true, example: 255  },
-            size:   { type: 'number', nullable: true, example: 5242880 },
+            max:      { type: 'number', nullable: true, example: 100 },
+            min:      { type: 'number', nullable: true, example: 0 },
+            length:   { type: 'number', nullable: true, example: 255 },
+            size:     { type: 'number', nullable: true, example: 5 },
+            sizeMode: { type: 'string', enum: ['sampleSizeBased', 'customSize'], example: 'sampleSizeBased' },
+            unitCost: { type: 'number', example: 15.5 },
           },
         },
         SectionInput: {

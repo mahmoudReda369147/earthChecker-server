@@ -1,4 +1,19 @@
 const Form = require('../models/Form')
+function validateImageSections(sections) {
+  if (!Array.isArray(sections)) return null
+  for (const s of sections) {
+    if (s && s.type === 'image') {
+      const mode = s.setting?.sizeMode || 'sampleSizeBased'
+      if (mode === 'customSize') {
+        const sz = Number(s.setting?.size)
+        if (s.setting?.size === null || s.setting?.size === undefined || isNaN(sz) || sz <= 0) {
+          return `Size field is required and must be greater than 0 for image section "${s.title || 'Untitled'}" when Customize Size is selected.`
+        }
+      }
+    }
+  }
+  return null
+}
 
 /* ════════════════════════════════════════════════════════════
    POST /api/forms
@@ -7,6 +22,11 @@ const Form = require('../models/Form')
 async function createForm(req, res) {
   try {
     const { name, description, moduleId, sections } = req.body
+
+    const valErr = validateImageSections(sections)
+    if (valErr) {
+      return res.status(400).json({ success: false, message: valErr })
+    }
 
     const form = await Form.create({
       name,
@@ -149,7 +169,13 @@ async function updateForm(req, res) {
     if (name        !== undefined) updates.name        = name
     if (description !== undefined) updates.description = description
     if (moduleId    !== undefined) updates.moduleId    = moduleId
-    if (sections    !== undefined) updates.sections    = sections
+    if (sections    !== undefined) {
+      const valErr = validateImageSections(sections)
+      if (valErr) {
+        return res.status(400).json({ success: false, message: valErr })
+      }
+      updates.sections = sections
+    }
 
     const form = await Form.findOneAndUpdate(
       { _id: req.params.id, companyId: req.user.company, isDeleted: false },

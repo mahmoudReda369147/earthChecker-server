@@ -11,12 +11,17 @@ const ROLE_RANK = { ceo: 3, supervisor: 2, worker: 1 }
 async function getStaff(req, res) {
   try {
     const {
-      page      = 1,
-      limit     = 10,
-      search    = '',
-      role      = '',
-      sortBy    = 'createdAt',
-      sortOrder = 'desc',
+      page        = 1,
+      limit       = 10,
+      search      = '',
+      role        = '',
+      status      = '',
+      createdBy   = '',
+      fromDate    = '',
+      toDate      = '',
+      sortBy      = 'createdAt',
+      sortOrder   = 'desc',
+      includeSelf = false,
     } = req.query
 
     const pageNum  = Math.max(1, parseInt(page,  10) || 1)
@@ -25,7 +30,29 @@ async function getStaff(req, res) {
 
     const filter = {
       company: req.user.company,
-      _id:     { $ne: req.user._id }, // exclude caller
+    }
+
+    /* ── Date Range Filter ── */
+    if (fromDate || toDate) {
+      filter.createdAt = {}
+      if (fromDate) {
+        const from = new Date(fromDate)
+        if (!isNaN(from.getTime())) {
+          from.setHours(0, 0, 0, 0)
+          filter.createdAt.$gte = from
+        }
+      }
+      if (toDate) {
+        const to = new Date(toDate)
+        if (!isNaN(to.getTime())) {
+          to.setHours(23, 59, 59, 999)
+          filter.createdAt.$lte = to
+        }
+      }
+    }
+
+    if (includeSelf !== 'true' && includeSelf !== true) {
+      filter._id = { $ne: req.user._id } // exclude caller unless includeSelf=true
     }
 
     if (search.trim()) {
@@ -38,6 +65,11 @@ async function getStaff(req, res) {
     if (role.trim() && ['ceo', 'supervisor', 'worker'].includes(role.trim())) {
       filter.role = role.trim()
     }
+
+    if (status.trim() === 'active')   filter.isActive = true
+    if (status.trim() === 'inactive') filter.isActive = false
+
+    if (createdBy.trim()) filter.createdBy = createdBy.trim()
 
     const ALLOWED_SORT = ['createdAt', 'updatedAt', 'name', 'role']
     const sortField    = ALLOWED_SORT.includes(sortBy) ? sortBy : 'createdAt'

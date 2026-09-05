@@ -3,10 +3,12 @@ const mongoose = require('mongoose')
 /* ── Section.setting (embedded, no _id needed) ── */
 const SectionSettingSchema = new mongoose.Schema(
   {
-    max:    { type: Number, default: null },
-    min:    { type: Number, default: null },
-    length: { type: Number, default: null },
-    size:   { type: Number, default: null },
+    max:      { type: Number, default: null },
+    min:      { type: Number, default: null },
+    length:   { type: Number, default: null },
+    size:     { type: Number, default: null },
+    sizeMode: { type: String, enum: ['sampleSizeBased', 'customSize'], default: 'sampleSizeBased' },
+    unitCost: { type: Number, default: 0 },
   },
   { _id: false }
 )

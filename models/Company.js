@@ -22,6 +22,16 @@ const CompanySchema = new mongoose.Schema(
       trim: true,
       default: '',
     },
+    phone: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    website: {
+      type: String,
+      trim: true,
+      default: '',
+    },
     // Set after the CEO user document is created
     ceo: {
       type: mongoose.Schema.Types.ObjectId,
@@ -31,6 +41,38 @@ const CompanySchema = new mongoose.Schema(
     isActive: {
       type: Boolean,
       default: true,
+    },
+
+    // Notification preferences
+    notificationSettings: {
+      emailNotifications: {
+        type: Boolean,
+        default: true,
+      },
+      rejectionAlerts: {
+        type: Boolean,
+        default: true,
+      },
+      cycleCompletionAlerts: {
+        type: Boolean,
+        default: true,
+      },
+      weeklySummaryReport: {
+        type: Boolean,
+        default: false,
+      },
+    },
+
+    // API & Webhook settings
+    apiSettings: {
+      apiKey: {
+        type: String,
+        default: '',
+      },
+      webhookUrl: {
+        type: String,
+        default: '',
+      },
     },
   },
   { timestamps: true }

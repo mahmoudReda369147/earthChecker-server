@@ -38,11 +38,35 @@ const CycleSchema = new mongoose.Schema(
       default: 'new',
     },
 
+    complianceStatus: {
+      type:    String,
+      enum:    ['pending', 'accepted', 'rejected'],
+      default: 'pending',
+    },
+
     progress: {
       type:    Number,
       default: 0,
       min:     0,
       max:     100,
+    },
+
+    totalBatchSize: {
+      type:    Number,
+      default: 0,
+      min:     0,
+    },
+
+    sampleSize: {
+      type:    Number,
+      default: 0,
+      min:     0,
+    },
+
+    unitCost: {
+      type:    Number,
+      default: 0,
+      min:     0,
     },
 
     pauseMessage: {

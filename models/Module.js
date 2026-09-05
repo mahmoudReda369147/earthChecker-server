@@ -32,6 +32,12 @@ const ModuleSchema = new mongoose.Schema(
       default: '',
     },
 
+    /* ── Problem types / defect categories defined for this Module ── */
+    problemTypes: {
+      type:    [String],
+      default: [],
+    },
+
     /* ── Soft delete ── */
     isDeleted: {
       type:    Boolean,
