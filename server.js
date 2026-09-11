@@ -41,9 +41,22 @@ app.use(
   })
 )
 
+const allowedOrigins = [
+  process.env.CLIENT_ORIGIN,
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://localhost:5180',
+].filter(Boolean)
+
 app.use(
   cors({
-    origin:      process.env.CLIENT_ORIGIN || 'http://localhost:5173',
+    origin: (origin, callback) => {
+      // allow requests with no origin (like mobile apps, curl, server-to-server)
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true)
+      }
+      return callback(null, true) // fallback allow in dev
+    },
     credentials: true, // required for httpOnly cookies
     methods:     ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],

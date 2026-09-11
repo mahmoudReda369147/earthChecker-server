@@ -123,7 +123,7 @@ async function login(req, res) {
     return res.status(200).json({
       success: true,
       message: 'Login successful',
-      data: { user: user.toPublic(), accessToken },
+      data: { user: user.toPublic(), accessToken, refreshToken },
     })
   } catch (err) {
     console.error('[login]', err)
@@ -212,7 +212,7 @@ async function resendVerification(req, res) {
    ════════════════════════════════════════════════════════════ */
 async function refreshToken(req, res) {
   try {
-    const incoming = req.cookies?.refreshToken
+    const incoming = req.cookies?.refreshToken || req.body?.refreshToken
     if (!incoming) {
       return res.status(401).json({ success: false, message: 'No refresh token' })
     }
@@ -255,7 +255,7 @@ async function refreshToken(req, res) {
 
     return res.status(200).json({
       success: true,
-      data: { accessToken: newAccessToken },
+      data: { accessToken: newAccessToken, refreshToken: newRefreshToken },
     })
   } catch (err) {
     console.error('[refreshToken]', err)
@@ -268,7 +268,7 @@ async function refreshToken(req, res) {
    ════════════════════════════════════════════════════════════ */
 async function logout(req, res) {
   try {
-    const token = req.cookies?.refreshToken
+    const token = req.cookies?.refreshToken || req.body?.refreshToken
     if (token) await RefreshToken.deleteOne({ token })
     res.clearCookie('refreshToken', { path: '/api/auth' })
     return res.status(200).json({ success: true, message: 'Logged out successfully' })
